@@ -9,8 +9,9 @@ import {
   Platform,
   TextInput,
   Alert,
+  Linking,
 } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { IconSymbol } from "@/components/IconSymbol";
 import { useTheme } from "@react-navigation/native";
 import { colors } from "@/styles/commonStyles";
@@ -28,6 +29,7 @@ interface Employee {
 
 export default function DirectoryScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
   // Mock employee data
@@ -37,7 +39,7 @@ export default function DirectoryScreen() {
       name: 'Michael Johnson',
       role: 'Security Team Lead',
       department: 'Operations',
-      phone: '+27 11 234 5678',
+      phone: '+27112345678',
       status: 'online',
       avatar: '👮',
     },
@@ -46,7 +48,7 @@ export default function DirectoryScreen() {
       name: 'Sarah Williams',
       role: 'Fleet Manager',
       department: 'Logistics',
-      phone: '+27 11 234 5679',
+      phone: '+27112345679',
       status: 'online',
       avatar: '👩‍💼',
     },
@@ -55,7 +57,7 @@ export default function DirectoryScreen() {
       name: 'John Smith',
       role: 'Driver',
       department: 'Transport',
-      phone: '+27 11 234 5680',
+      phone: '+27112345680',
       status: 'busy',
       avatar: '🚛',
     },
@@ -64,7 +66,7 @@ export default function DirectoryScreen() {
       name: 'Emma Davis',
       role: 'Operations Manager',
       department: 'Operations',
-      phone: '+27 11 234 5681',
+      phone: '+27112345681',
       status: 'online',
       avatar: '👩‍💻',
     },
@@ -73,7 +75,7 @@ export default function DirectoryScreen() {
       name: 'David Brown',
       role: 'Security Officer',
       department: 'Security',
-      phone: '+27 11 234 5682',
+      phone: '+27112345682',
       status: 'offline',
       avatar: '🛡️',
     },
@@ -82,7 +84,7 @@ export default function DirectoryScreen() {
       name: 'Lisa Anderson',
       role: 'Emergency Response',
       department: 'Emergency',
-      phone: '+27 11 234 5683',
+      phone: '+27112345683',
       status: 'online',
       avatar: '🚨',
     },
@@ -91,7 +93,7 @@ export default function DirectoryScreen() {
       name: 'Robert Taylor',
       role: 'Driver',
       department: 'Transport',
-      phone: '+27 11 234 5684',
+      phone: '+27112345684',
       status: 'busy',
       avatar: '🚚',
     },
@@ -100,7 +102,7 @@ export default function DirectoryScreen() {
       name: 'Jennifer Wilson',
       role: 'Dispatcher',
       department: 'Operations',
-      phone: '+27 11 234 5685',
+      phone: '+27112345685',
       status: 'online',
       avatar: '📡',
     },
@@ -130,15 +132,37 @@ export default function DirectoryScreen() {
       'Call ' + employee.name,
       'Would you like to call ' + employee.phone + '?',
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Call', onPress: () => console.log('Calling:', employee.phone) },
+        { 
+          text: 'Cancel', 
+          style: 'cancel' 
+        },
+        { 
+          text: 'Call', 
+          onPress: () => {
+            const phoneUrl = `tel:${employee.phone}`;
+            Linking.canOpenURL(phoneUrl)
+              .then((supported) => {
+                if (supported) {
+                  return Linking.openURL(phoneUrl);
+                } else {
+                  Alert.alert('Error', 'Phone calls are not supported on this device');
+                  console.log('Phone calls not supported');
+                }
+              })
+              .catch((err) => {
+                console.error('Error opening phone dialer:', err);
+                Alert.alert('Error', 'Failed to open phone dialer');
+              });
+          }
+        },
       ]
     );
   };
 
   const handleMessage = (employee: Employee) => {
-    Alert.alert('Message', 'Opening chat with ' + employee.name);
     console.log('Opening chat with:', employee.name);
+    // Navigate to a chat screen - for now we'll use a generic chat
+    router.push('/chat/1');
   };
 
   const renderEmployeeItem = ({ item }: { item: Employee }) => (

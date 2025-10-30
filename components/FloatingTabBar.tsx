@@ -8,6 +8,7 @@ import {
   Platform,
   Dimensions,
   Alert,
+  Linking,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -92,60 +93,122 @@ export default function FloatingTabBar({
     router.push(route);
   };
 
-  const handlePanicButton = async () => {
-    console.log('Panic button pressed!');
+  const sendEmergencyNotification = async (latitude?: number, longitude?: number) => {
+    // Simulate sending notification to control center
+    console.log('🚨 EMERGENCY NOTIFICATION SENT TO CONTROL CENTER');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('User Location:', latitude && longitude ? `${latitude}, ${longitude}` : 'Location unavailable');
     
-    // Haptic feedback
+    // In a real app, this would be an API call to your backend
+    // Example:
+    // await fetch('https://your-api.com/emergency', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({
+    //     userId: 'current-user-id',
+    //     timestamp: new Date().toISOString(),
+    //     location: { latitude, longitude },
+    //     type: 'panic_button'
+    //   })
+    // });
+
+    return true;
+  };
+
+  const handlePanicButton = async () => {
+    console.log('🚨 Panic button pressed!');
+    
+    // Haptic feedback - strong vibration pattern
     if (Platform.OS !== 'web') {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      // Additional vibration for emphasis
+      setTimeout(() => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }, 200);
     }
 
     try {
       // Request location permissions
       const { status } = await Location.requestForegroundPermissionsAsync();
       
-      if (status !== 'granted') {
-        Alert.alert(
-          'Emergency Alert Activated',
-          'Location permission denied. Emergency alert sent without location data.\n\nEmergency services have been notified.',
-          [{ text: 'OK' }]
-        );
-        return;
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+
+      if (status === 'granted') {
+        try {
+          // Get current location
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+          latitude = location.coords.latitude;
+          longitude = location.coords.longitude;
+        } catch (locationError) {
+          console.error('Error getting location:', locationError);
+        }
       }
 
-      // Get current location
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      // Send emergency notification to control center
+      await sendEmergencyNotification(latitude, longitude);
 
-      const { latitude, longitude } = location.coords;
-
-      // Show alert with location
+      // Show confirmation alert with option to call control center
       Alert.alert(
-        '🚨 EMERGENCY ALERT ACTIVATED',
-        `Your location has been shared with the emergency response team:\n\nLatitude: ${latitude.toFixed(6)}\nLongitude: ${longitude.toFixed(6)}\n\nEmergency services are being dispatched to your location.`,
+        '🚨 EMERGENCY ALERT SENT',
+        latitude && longitude
+          ? `Your emergency alert has been sent to the control center with your location:\n\nLatitude: ${latitude.toFixed(6)}\nLongitude: ${longitude.toFixed(6)}\n\nThe control center will call you shortly.`
+          : 'Your emergency alert has been sent to the control center.\n\nThe control center will call you shortly.',
         [
           {
-            text: 'Cancel Alert',
-            style: 'cancel',
-            onPress: () => console.log('Alert cancelled'),
+            text: 'Call Control Center Now',
+            onPress: () => {
+              const controlCenterPhone = '+27112345999'; // Control center emergency number
+              const phoneUrl = `tel:${controlCenterPhone}`;
+              Linking.canOpenURL(phoneUrl)
+                .then((supported) => {
+                  if (supported) {
+                    return Linking.openURL(phoneUrl);
+                  } else {
+                    Alert.alert('Error', 'Phone calls are not supported on this device');
+                    console.log('Phone calls not supported');
+                  }
+                })
+                .catch((err) => {
+                  console.error('Error opening phone dialer:', err);
+                  Alert.alert('Error', 'Failed to open phone dialer');
+                });
+            },
           },
           {
-            text: 'Confirm Emergency',
-            style: 'destructive',
-            onPress: () => {
-              console.log('Emergency confirmed with location:', { latitude, longitude });
-              Alert.alert('Help is on the way', 'Emergency response team has been notified and is en route to your location.');
-            },
+            text: 'Wait for Call',
+            style: 'cancel',
+            onPress: () => console.log('User waiting for control center to call'),
           },
         ]
       );
     } catch (error) {
-      console.error('Error getting location:', error);
+      console.error('Error in panic button handler:', error);
+      
+      // Still send notification even if location fails
+      await sendEmergencyNotification();
+      
       Alert.alert(
-        'Emergency Alert',
-        'Unable to get your location. Emergency alert sent without location data.\n\nEmergency services have been notified.',
-        [{ text: 'OK' }]
+        '🚨 EMERGENCY ALERT SENT',
+        'Your emergency alert has been sent to the control center.\n\nThe control center will call you shortly.',
+        [
+          {
+            text: 'Call Control Center Now',
+            onPress: () => {
+              const controlCenterPhone = '+27112345999';
+              const phoneUrl = `tel:${controlCenterPhone}`;
+              Linking.openURL(phoneUrl).catch((err) => {
+                console.error('Error opening phone dialer:', err);
+              });
+            },
+          },
+          {
+            text: 'Wait for Call',
+            style: 'cancel',
+          },
+        ]
       );
     }
   };

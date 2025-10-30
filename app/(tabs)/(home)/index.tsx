@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { 
   FlatList, 
   Pressable, 
@@ -27,6 +27,7 @@ interface Chat {
 
 export default function ChatsScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
   // Mock chat data
@@ -82,10 +83,15 @@ export default function ChatsScreen() {
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleChatPress = (chatId: string) => {
+    console.log('Opening chat:', chatId);
+    router.push(`/chat/${chatId}`);
+  };
+
   const renderChatItem = ({ item }: { item: Chat }) => (
     <Pressable
       style={[styles.chatItem, { backgroundColor: colors.card }]}
-      onPress={() => console.log('Open chat:', item.name)}
+      onPress={() => handleChatPress(item.id)}
     >
       <View style={styles.avatarContainer}>
         <View style={styles.avatar}>
