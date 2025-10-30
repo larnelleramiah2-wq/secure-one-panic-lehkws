@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Platform } from 'react-native';
 import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
@@ -10,8 +11,14 @@ export default function TabLayout() {
     {
       name: '(home)',
       route: '/(tabs)/(home)/',
-      icon: 'house.fill',
-      label: 'Home',
+      icon: 'message.fill',
+      label: 'Chats',
+    },
+    {
+      name: 'directory',
+      route: '/(tabs)/directory',
+      icon: 'person.2.fill',
+      label: 'Directory',
     },
     {
       name: 'profile',
@@ -26,8 +33,12 @@ export default function TabLayout() {
     return (
       <NativeTabs>
         <NativeTabs.Trigger name="(home)">
-          <Icon sf="house.fill" drawable="ic_home" />
-          <Label>Home</Label>
+          <Icon sf="message.fill" drawable="ic_message" />
+          <Label>Chats</Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="directory">
+          <Icon sf="person.2.fill" drawable="ic_directory" />
+          <Label>Directory</Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="profile">
           <Icon sf="person.fill" drawable="ic_profile" />
@@ -43,10 +54,11 @@ export default function TabLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          animation: 'none', // Remove fade animation to prevent black screen flash
+          animation: 'none',
         }}
       >
         <Stack.Screen name="(home)" />
+        <Stack.Screen name="directory" />
         <Stack.Screen name="profile" />
       </Stack>
       <FloatingTabBar tabs={tabs} />

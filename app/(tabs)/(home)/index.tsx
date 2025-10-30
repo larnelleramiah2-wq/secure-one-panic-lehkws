@@ -1,161 +1,283 @@
-import React from "react";
-import { Stack, Link } from "expo-router";
-import { FlatList, Pressable, StyleSheet, View, Text, Alert, Platform } from "react-native";
+
+import React, { useState } from "react";
+import { Stack } from "expo-router";
+import { 
+  FlatList, 
+  Pressable, 
+  StyleSheet, 
+  View, 
+  Text, 
+  Platform,
+  TextInput,
+} from "react-native";
 import { IconSymbol } from "@/components/IconSymbol";
-import { GlassView } from "expo-glass-effect";
 import { useTheme } from "@react-navigation/native";
+import { colors } from "@/styles/commonStyles";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const ICON_COLOR = "#007AFF";
+interface Chat {
+  id: string;
+  name: string;
+  lastMessage: string;
+  timestamp: string;
+  unread: number;
+  avatar: string;
+  online: boolean;
+}
 
-export default function HomeScreen() {
+export default function ChatsScreen() {
   const theme = useTheme();
-  const modalDemos = [
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Mock chat data
+  const chats: Chat[] = [
     {
-      title: "Standard Modal",
-      description: "Full screen modal presentation",
-      route: "/modal",
-      color: "#007AFF",
+      id: '1',
+      name: 'Security Team Alpha',
+      lastMessage: 'Route confirmed for shipment #4521',
+      timestamp: '10:30 AM',
+      unread: 2,
+      avatar: '🛡️',
+      online: true,
     },
     {
-      title: "Form Sheet",
-      description: "Bottom sheet with detents and grabber",
-      route: "/formsheet",
-      color: "#34C759",
+      id: '2',
+      name: 'Driver - John Smith',
+      lastMessage: 'Arrived at checkpoint 3',
+      timestamp: '9:45 AM',
+      unread: 0,
+      avatar: '🚛',
+      online: true,
     },
     {
-      title: "Transparent Modal",
-      description: "Overlay without obscuring background",
-      route: "/transparent-modal",
-      color: "#FF9500",
-    }
+      id: '3',
+      name: 'Operations Center',
+      lastMessage: 'All clear on route N1',
+      timestamp: 'Yesterday',
+      unread: 0,
+      avatar: '🏢',
+      online: false,
+    },
+    {
+      id: '4',
+      name: 'Emergency Response',
+      lastMessage: 'Standing by',
+      timestamp: 'Yesterday',
+      unread: 0,
+      avatar: '🚨',
+      online: true,
+    },
+    {
+      id: '5',
+      name: 'Fleet Manager',
+      lastMessage: 'Schedule updated for tomorrow',
+      timestamp: '2 days ago',
+      unread: 0,
+      avatar: '📋',
+      online: false,
+    },
   ];
 
-  const renderModalDemo = ({ item }: { item: (typeof modalDemos)[0] }) => (
-    <GlassView style={[
-      styles.demoCard,
-      Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-    ]} glassEffectStyle="regular">
-      <View style={[styles.demoIcon, { backgroundColor: item.color }]}>
-        <IconSymbol name="square.grid.3x3" color="white" size={24} />
-      </View>
-      <View style={styles.demoContent}>
-        <Text style={[styles.demoTitle, { color: theme.colors.text }]}>{item.title}</Text>
-        <Text style={[styles.demoDescription, { color: theme.dark ? '#98989D' : '#666' }]}>{item.description}</Text>
-      </View>
-      <Link href={item.route as any} asChild>
-        <Pressable>
-          <GlassView style={[
-            styles.tryButton,
-            Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)' }
-          ]} glassEffectStyle="clear">
-            <Text style={[styles.tryButtonText, { color: theme.colors.primary }]}>Try It</Text>
-          </GlassView>
-        </Pressable>
-      </Link>
-    </GlassView>
+  const filteredChats = chats.filter(chat =>
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const renderHeaderRight = () => (
+  const renderChatItem = ({ item }: { item: Chat }) => (
     <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
-      style={styles.headerButtonContainer}
+      style={[styles.chatItem, { backgroundColor: colors.card }]}
+      onPress={() => console.log('Open chat:', item.name)}
     >
-      <IconSymbol name="plus" color={theme.colors.primary} />
+      <View style={styles.avatarContainer}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarEmoji}>{item.avatar}</Text>
+        </View>
+        {item.online && <View style={styles.onlineIndicator} />}
+      </View>
+      
+      <View style={styles.chatContent}>
+        <View style={styles.chatHeader}>
+          <Text style={[styles.chatName, { color: colors.text }]} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={[styles.timestamp, { color: colors.textSecondary }]}>
+            {item.timestamp}
+          </Text>
+        </View>
+        <View style={styles.chatFooter}>
+          <Text 
+            style={[styles.lastMessage, { color: colors.textSecondary }]} 
+            numberOfLines={1}
+          >
+            {item.lastMessage}
+          </Text>
+          {item.unread > 0 && (
+            <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}>
+              <Text style={styles.unreadText}>{item.unread}</Text>
+            </View>
+          )}
+        </View>
+      </View>
     </Pressable>
   );
 
-  const renderHeaderLeft = () => (
-    <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
-      style={styles.headerButtonContainer}
-    >
-      <IconSymbol
-        name="gear"
-        color={theme.colors.primary}
-      />
-    </Pressable>
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
+        <IconSymbol name="magnifyingglass" size={20} color={colors.textSecondary} />
+        <TextInput
+          style={[styles.searchInput, { color: colors.text }]}
+          placeholder="Search chats..."
+          placeholderTextColor={colors.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+    </View>
   );
 
   return (
-    <>
+    <SafeAreaView 
+      style={[styles.container, { backgroundColor: colors.background }]} 
+      edges={['top']}
+    >
       {Platform.OS === 'ios' && (
         <Stack.Screen
           options={{
-            title: "Building the app...",
-            headerRight: renderHeaderRight,
-            headerLeft: renderHeaderLeft,
+            title: "Chats",
+            headerLargeTitle: true,
           }}
         />
       )}
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <FlatList
-          data={modalDemos}
-          renderItem={renderModalDemo}
-          keyExtractor={(item) => item.route}
-          contentContainerStyle={[
-            styles.listContainer,
-            Platform.OS !== 'ios' && styles.listContainerWithTabBar
-          ]}
-          contentInsetAdjustmentBehavior="automatic"
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
-    </>
+      {Platform.OS !== 'ios' && (
+        <View style={[styles.customHeader, { backgroundColor: colors.card }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Chats</Text>
+        </View>
+      )}
+      <FlatList
+        data={filteredChats}
+        renderItem={renderChatItem}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={renderHeader}
+        contentContainerStyle={[
+          styles.listContainer,
+          Platform.OS !== 'ios' && styles.listContainerWithTabBar
+        ]}
+        showsVerticalScrollIndicator={false}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor handled dynamically
+  },
+  customHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
   },
   listContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   listContainerWithTabBar: {
-    paddingBottom: 100, // Extra padding for floating tab bar
+    paddingBottom: 100,
   },
-  demoCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+  headerContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 8,
   },
-  demoIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    padding: 0,
+  },
+  chatItem: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 12,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.highlight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
   },
-  demoContent: {
+  avatarEmoji: {
+    fontSize: 28,
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.online,
+    borderWidth: 2,
+    borderColor: colors.card,
+  },
+  chatContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  chatHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  chatName: {
+    fontSize: 17,
+    fontWeight: '600',
     flex: 1,
   },
-  demoTitle: {
-    fontSize: 18,
+  timestamp: {
+    fontSize: 13,
+    marginLeft: 8,
+  },
+  chatFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  lastMessage: {
+    fontSize: 15,
+    flex: 1,
+  },
+  unreadBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    marginLeft: 8,
+  },
+  unreadText: {
+    color: '#ffffff',
+    fontSize: 12,
     fontWeight: '600',
-    marginBottom: 4,
-    // color handled dynamically
-  },
-  demoDescription: {
-    fontSize: 14,
-    lineHeight: 18,
-    // color handled dynamically
-  },
-  headerButtonContainer: {
-    padding: 6,
-  },
-  tryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  tryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    // color handled dynamically
   },
 });
